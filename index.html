@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Are Lokesh Reddy // Stark Workshop Desk // LOSH OS v7.29</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        stark: {
+                            bg: '#020617',
+                            panel: 'rgba(2, 10, 22, 0.85)',
+                            border: '#00f0ff55',
+                            glow: '#00f0ff',
+                            amber: '#ffb703'
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['"Share Tech Mono"', 'monospace'],
+                        sans: ['"Inter"', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            background-color: #020617;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+        .scanlines {
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        body.fx-off .scanlines { opacity: 0; }
+        
+        #bg-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 0;
+            pointer-events: auto;
+        }
+
+        .hud-border {
+            border: 1px solid rgba(0, 240, 255, 0.5);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.15), inset 0 0 10px rgba(0, 240, 255, 0.05);
+            position: relative;
+        }
+        .hud-border::before {
+            content: ''; position: absolute; top: -2px; left: -2px; width: 8px; height: 8px;
+            border-top: 2px solid #00f0ff; border-left: 2px solid #00f0ff;
+        }
+        .hud-border::after {
+            content: ''; position: absolute; bottom: -2px; right: -2px; width: 8px; height: 8px;
+            border-bottom: 2px solid #00f0ff; border-right: 2px solid #00f0ff;
+        }
+        .glow-text { text-shadow: 0 0 15px rgba(0, 240, 255, 0.9); }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #00f0ff66; border-radius: 2px; }
+
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.9; box-shadow: 0 0 20px rgba(0,240,255,0.4); }
+            50% { opacity: 1; box-shadow: 0 0 40px rgba(0,240,255,0.9); }
+        }
+        .reactor-pulse { animation: pulseGlow 3s infinite ease-in-out; }
+
+        #slide-menu {
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+            transform: translateX(100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+        #slide-menu.open {
+            transform: translateX(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body class="min-h-screen relative font-sans fx-on flex flex-col">
+
+    <div class="scanlines fixed inset-0 z-50 pointer-events-none"></div>
+
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Welcome Gateway Modal -->
+    <div id="welcome-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="hud-border bg-[#020b18] p-6 md:p-8 rounded-lg max-w-xl w-full glow-box relative backdrop-blur-2xl">
+            <div class="absolute -top-3 left-4 bg-cyan-950 px-2 border border-cyan-500/40 text-cyan-400 font-mono text-xs">
+                SYSTEM INITIALIZATION // VOICE PROTOCOL ACTIVE
+            </div>
+            <div class-="text-center mb-6">
+                <div class="w-16 h-16 rounded-full bg-cyan-950/80 border-2 border-cyan-400 mx-auto flex items-center justify-center mb-3 reactor-pulse">
+                    <i class="fa-solid fa-atom text-cyan-400 text-2xl"></i>
+                </div>
+                <h2 class="text-2xl font-mono font-bold text-cyan-300 glow-text text-center">WELCOME TO ARE LOKESH REDDY'S DESK</h2>
+                <p class="text-xs font-mono text-cyan-400/80 mt-1 text-center">L.O.S.H. Autonomous Voice AI is online. Select your visitor designation:</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 my-6 font-mono">
+                <button onclick="selectVisitor('recruiter')" class="group p-4 hud-border bg-cyan-950/40 hover:bg-cyan-500/20 transition-all text-left rounded cursor-pointer">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-bold text-cyan-300 text-sm"><i class="fa-solid fa-briefcase mr-2 text-cyan-400"></i>RECRUITER</span>
+                        <span class="text-[10px] text-emerald-400 border border-emerald-500/30 px-1 rounded">PRIORITY</span>
+                    </div>
+                    <p class="text-xs text-slate-300 font-sans">Fast-track priority access to self-intro, education, live project deployments, and resume.</p>
+                </button>
+
+                <button onclick="selectVisitor('explorer')" class="group p-4 hud-border bg-cyan-950/40 hover:bg-cyan-500/20 transition-all text-left rounded cursor-pointer">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-bold text-cyan-300 text-sm"><i class="fa-solid fa-globe mr-2 text-cyan-400"></i>TECH ENTHUSIAST</span>
+                        <span class="text-[10px] text-amber-400 border border-amber-500/30 px-1 rounded">EXPLORER</span>
+                    </div>
+                    <p class="text-xs text-slate-300 font-sans">Interactive voice Q&A with autonomous UI navigation and project walkthroughs.</p>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stark Header -->
+    <header class="border-b border-cyan-500/30 bg-stark-bg/40 backdrop-blur-sm sticky top-0 z-40 px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-full bg-cyan-950 border-2 border-cyan-400 flex items-center justify-center reactor-pulse cursor-pointer" onclick="loshSpeak('Systems nominal. L.O.S.H. voice active.')">
+                <i class="fa-solid fa-atom text-cyan-400 text-sm"></i>
+            </div>
+            <div>
+                <h1 class="font-mono text-cyan-400 font-bold tracking-widest text-sm glow-text">ARE LOKESH REDDY // STARK DESK</h1>
+                <p class="text-[10px] font-mono text-cyan-300/60">SYSTEM: <span class="text-cyan-400">LOSH OS v7.29</span> | VOICE: <span class="text-emerald-400">ACTIVE</span></p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs font-mono">
+            <button onclick="toggleFullscreen()" id="fullscreen-btn" class="px-2.5 py-1 border border-cyan-500/40 bg-stark-panel text-cyan-300 hover:bg-cyan-500/20 transition-all rounded">
+                [ ⛶ FULLSCREEN ]
+            </button>
+            <button onclick="toggleHudFx()" id="fx-toggle-btn" class="px-2.5 py-1 border border-cyan-500/40 bg-stark-panel text-cyan-300 hover:bg-cyan-500/20 transition-all rounded">
+                [HUD FX: ON]
+            </button>
+            <button onclick="promptAdminLogin()" id="admin-auth-btn" class="px-3 py-1 border border-amber-500/60 bg-amber-950/40 text-amber-300 hover:bg-amber-500/20 transition-all rounded font-bold">
+                <i class="fa-solid fa-lock mr-1"></i> <span id="admin-auth-text">ADMIN LOGIN</span>
+            </button>
+            <button onclick="toggleMenu()" class="px-3.5 py-1 hud-border bg-cyan-500/25 text-cyan-100 rounded font-bold shadow-md hover:bg-cyan-500/40 transition-all flex items-center gap-1.5">
+                <i class="fa-solid fa-bars text-cyan-400"></i> MENU
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="flex-1 relative z-10 p-6 flex justify-between items-start pointer-events-none">
+        
+        <!-- Left Side: L.O.S.H. Autonomous Voice Navigator & Chat -->
+        <div class="w-80 flex flex-col gap-4 pointer-events-auto h-[82vh]">
+            <div class="hud-border bg-stark-panel rounded-lg p-4 backdrop-blur-md flex flex-col flex-1 overflow-hidden">
+                <div class="flex items-center justify-between mb-2 pb-2 border-b border-cyan-500/30">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                        <span class="font-mono font-bold text-cyan-300 text-xs">L.O.S.H. VOICE NAVIGATOR</span>
+                    </div>
+                    <span class="text-[9px] text-emerald-400 font-mono">SPEAKING</span>
+                </div>
+
+                <!-- Chat History Box -->
+                <div id="chat-history" class="bg-black/60 border border-cyan-500/20 rounded p-3 flex-1 overflow-y-auto space-y-3 font-mono text-[11px] text-slate-300 mb-3">
+                    <div class="text-cyan-300 bg-cyan-950/50 p-2 rounded border border-cyan-500/30">
+                        <strong>L.O.S.H.:</strong> Greetings. I am your continuous voice-enabled guide for Are Lokesh Reddy's desk. Ask me to open projects, view Lokesh's resume, or check certifications, and I will speak my responses while navigating the screen for you.
+                    </div>
+                </div>
+
+                <!-- Chat Input Box -->
+                <div class="flex gap-2">
+                    <input type="text" id="chat-input" placeholder="Ask L.O.S.H. (e.g. show projects)..." class="bg-black/50 border border-cyan-500/30 rounded px-2.5 py-1.5 text-cyan-200 flex-1 text-[11px] font-mono focus:outline-none focus:border-cyan-400" onkeypress="handleChatKey(event)">
+                    <button onclick="sendChatMessage()" class="px-3 py-1.5 bg-cyan-950 border border-cyan-400 text-cyan-200 rounded text-xs font-bold hover:bg-cyan-500/20">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Persistent Experience & Certifications Panel (With Admin Add/Edit controls) -->
+        <div id="persistent-right-panel" class="w-[410px] hud-border bg-stark-panel rounded-lg p-4 backdrop-blur-xl pointer-events-auto flex flex-col gap-3 shadow-2xl max-h-[82vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-2 border-b border-cyan-500/30">
+                <h3 class="font-mono font-bold text-cyan-300 text-xs flex items-center">
+                    <i class="fa-solid fa-briefcase mr-2 text-cyan-400"></i> EXPERIENCE & CERTIFICATION
+                </h3>
+                <div id="admin-panel-badge" class="hidden flex items-center gap-1">
+                    <span class="text-[9px] text-amber-400 bg-amber-950 px-1.5 py-0.5 rounded font-mono border border-amber-500/40">ADMIN MODE</span>
+                    <button onclick="openAddExperienceModal()" class="px-2 py-0.5 bg-cyan-950 border border-cyan-400 text-cyan-300 rounded text-[10px] font-mono hover:bg-cyan-500/20">
+                        <i class="fa-solid fa-plus"></i> ADD
+                    </button>
+                </div>
+                <span id="user-panel-badge" class="text-[9px] text-emerald-400 border border-emerald-500/40 px-1.5 py-0.5 rounded font-mono">PINNED</span>
+            </div>
+
+            <p class="text-[10px] font-mono text-cyan-300/70">
+                Key internships and verified professional credentials:
+            </p>
+
+            <div id="experience-container" class="space-y-3 font-mono text-xs">
+                <!-- Dynamically Rendered via JS -->
+            </div>
+
+            <div class="pt-2 border-t border-cyan-500/30 text-center">
+                <button onclick="toggleMenu()" class="w-full py-1.5 bg-cyan-950 border border-cyan-400 text-cyan-200 rounded font-mono text-[11px] font-bold hover:bg-cyan-500/20 transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-folder-tree text-cyan-400"></i> OPEN FULL DOSSIER MENU
+                </button>
+            </div>
+        </div>
+
+        <!-- Slide-Out Dossier Menu -->
+        <div id="slide-menu" class="fixed right-0 top-16 w-96 h-[calc(100vh-4rem)] hud-border bg-stark-panel p-5 backdrop-blur-xl pointer-events-auto flex flex-col gap-4 shadow-2xl z-50">
+            <div class="flex items-center justify-between pb-3 border-b border-cyan-500/30">
+                <h3 class="font-mono font-bold text-cyan-300 text-sm flex items-center">
+                    <i class="fa-solid fa-folder-tree mr-2 text-cyan-400"></i> HOLOGRAPHIC MENU LOG
+                </h3>
+                <button onclick="toggleMenu()" class="text-cyan-400 hover:text-cyan-200 font-mono text-xs px-2 py-1 border border-cyan-500/30 rounded">
+                    <i class="fa-solid fa-xmark"></i> CLOSE
+                </button>
+            </div>
+
+            <p class="text-[11px] font-mono text-cyan-300/70">
+                Select an operative file below to project volumetric data onto the desk:
+            </p>
+
+            <div class="space-y-3 font-mono text-xs flex-1 overflow-y-auto pr-1">
+                <div onclick="openDossier('SELF_INTRODUCTION')" class="hud-border bg-cyan-950/40 p-3 rounded cursor-pointer hover:bg-cyan-500/20 transition-all flex items-center justify-between">
+                    <div>
+                        <span class="text-[9px] text-cyan-400 block">DOSSIER #00</span>
+                        <span class="font-bold text-cyan-200">Self-Introduction & Education</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-cyan-400 text-xs"></i>
+                </div>
+
+                <div onclick="openDossier('PROJECTS_VAULT')" class="hud-border bg-cyan-950/40 p-3 rounded cursor-pointer hover:bg-cyan-500/20 transition-all flex items-center justify-between">
+                    <div>
+                        <span class="text-[9px] text-amber-400 block">DOSSIER #01</span>
+                        <span class="font-bold text-cyan-200">Projects Vault, Videos & Deployments</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-cyan-400 text-xs"></i>
+                </div>
+
+                <div onclick="openDossier('CERTIFICATIONS_CLEARANCE')" class="hud-border bg-cyan-950/40 p-3 rounded cursor-pointer hover:bg-cyan-500/20 transition-all flex items-center justify-between">
+                    <div>
+                        <span class="text-[9px] text-emerald-400 block">DOSSIER #02</span>
+                        <span class="font-bold text-cyan-200">Certifications & Clearances</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-cyan-400 text-xs"></i>
+                </div>
+
+                <div onclick="openDossier('SKILLS_DIAGNOSTICS')" class="hud-border bg-cyan-950/40 p-3 rounded cursor-pointer hover:bg-cyan-500/20 transition-all flex items-center justify-between">
+                    <div>
+                        <span class="text-[9px] text-cyan-400 block">DOSSIER #03</span>
+                        <span class="font-bold text-cyan-200">Skills Diagnostics</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-cyan-400 text-xs"></i>
+                </div>
+
+                <div onclick="openDossier('MASTER_RESUME')" class="hud-border bg-cyan-950/40 p-3 rounded cursor-pointer hover:bg-cyan-500/20 transition-all flex items-center justify-between">
+                    <div>
+                        <span class="text-[9px] text-amber-400 block">DOSSIER #04</span>
+                        <span class="font-bold text-cyan-200">Master Resume</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-cyan-400 text-xs"></i>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-cyan-500/30 text-[10px] font-mono text-slate-400 text-center">
+                ARE LOKESH REDDY // STARK INDUSTRIES PROTOCOL
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div id="admin-login-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="hud-border bg-[#020b18] rounded-lg max-w-sm w-full p-6 glow-box relative backdrop-blur-2xl font-mono">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-cyan-500/30">
+                <h4 class="text-amber-400 font-bold text-sm"><i class="fa-solid fa-shield-halved mr-1"></i> ADMIN AUTHENTICATION</h4>
+                <button onclick="closeAdminLoginModal()" class="text-cyan-400 hover:text-cyan-200 text-xs"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p class="text-xs text-slate-300 mb-4">Enter admin passcode to unlock universal editing privileges ():</p>
+            <input type="password" id="admin-passcode-input" placeholder="Passcode" class="w-full bg-black/50 border border-cyan-500/40 rounded px-3 py-2 text-cyan-200 text-xs mb-4 focus:outline-none focus:border-amber-400" onkeypress="handlePasscodeKey(event)">
+            <div class="flex justify-end gap-2">
+                <button onclick="closeAdminLoginModal()" class="px-3 py-1.5 bg-black/50 border border-cyan-500/30 text-cyan-300 rounded text-xs">CANCEL</button>
+                <button onclick="verifyAdminPasscode()" class="px-4 py-1.5 bg-amber-950/60 border border-amber-500 text-amber-300 rounded text-xs font-bold">AUTHENTICATE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Add Experience Modal -->
+    <div id="add-exp-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="hud-border bg-[#020b18] rounded-lg max-w-lg w-full p-6 glow-box relative backdrop-blur-2xl font-mono max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-cyan-500/30">
+                <h4 class="text-cyan-300 font-bold text-sm" id="exp-modal-title"><i class="fa-solid fa-plus-circle mr-1"></i> ADD EXPERIENCE / CERT</h4>
+                <button onclick="closeAddExperienceModal()" class="text-cyan-400 hover:text-cyan-200 text-xs"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <input type="hidden" id="edit-exp-id" value="">
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-cyan-400 mb-1">Type:</label>
+                    <select id="new-exp-type" class="w-full bg-black/50 border border-cyan-500/40 rounded px-3 py-1.5 text-cyan-200">
+                        <option value="exp">Experience / Internship</option>
+                        <option value="cert">Certification</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-cyan-400 mb-1">Title / Role:</label>
+                    <input type="text" id="new-exp-title" placeholder="e.g. AI Research Intern" class="w-full bg-black/50 border border-cyan-500/40 rounded px-3 py-1.5 text-cyan-200">
+                </div>
+                <div>
+                    <label class="block text-cyan-400 mb-1">Organization / Platform:</label>
+                    <input type="text" id="new-exp-org" placeholder="e.g. Google / EDUNET" class="w-full bg-black/50 border border-cyan-500/40 rounded px-3 py-1.5 text-cyan-200">
+                </div>
+                <div>
+                    <label class="block text-cyan-400 mb-1">Date / Period:</label>
+                    <input type="text" id="new-exp-date" placeholder="e.g. July 2026" class="w-full bg-black/50 border border-cyan-500/40 rounded px-3 py-1.5 text-cyan-200">
+                </div>
+                <div>
+                    <label class="block text-cyan-400 mb-1">Description / Details:</label>
+                    <textarea id="new-exp-desc" rows="3" placeholder="Developed neural networks..." class="w-full bg-black/50 border border-cyan-500/40 rounded px-3 py-1.5 text-cyan-200"></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-5">
+                <button onclick="closeAddExperienceModal()" class="px-3 py-1.5 bg-black/50 border border-cyan-500/30 text-cyan-300 rounded text-xs">CANCEL</button>
+                <button onclick="saveExperienceEntry()" class="px-4 py-1.5 bg-cyan-950 border border-cyan-400 text-cyan-200 rounded text-xs font-bold">SAVE ENTRY</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Add Project Modal -->
+    <div id="add-proj-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="hud-border bg-[#020b18] rounded-lg max-w-lg w-full p-6 glow-box relative backdrop-blur-2xl font-mono max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-cyan-500/30">
+                <h4 class="text-amber-400 font-bold text-sm" id="proj-modal-title"><i class="fa-solid fa-plus-circle mr-1"></i> ADD / EDIT PROJECT</h4>
+                <button onclick="closeAddProjectModal()" class="text-cyan-400 hover:text-cyan-200 text-xs"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <input type="hidden" id="edit-proj-id" value="">
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-cyan-400 mb-1">Project Title:</label>
+                    <input type="text" id="new-proj-title" placeholder="e.g. Neuro_forage AI" class="w-full bg-black/50 border border-cyan-500/40 rounded px-3 py-1.5 text-cyan-200">
+                </div>
+                <div>
+                    <label class="block text-cyan-400 mb-1">Description:</label>
+                    <textarea id="new-proj-desc" rows="2" placeholder="Platform overview..." class="w-full bg-black/50 border border-cyan-500/40 rounded px-3 py-1.5 text-cyan-200"></textarea>
+                </div>
+                <div>
+                    <label class="block text-cyan-400 mb-1">Workflow / Tech Stack:</label>
+                    <input type="text" id="new-proj-workflow" placeholder="e.g. User Input -> GenAI Model -> UI" class="w-full bg-black/50 border border-cyan-500/40 rounded px-3 py-1.5 text-cyan-200">
+                </div>
+                <div>
+                    <label class="block text-cyan-400 mb-1">Video Demo Path:</label>
+                    <input type="text" id="new-proj-video" placeholder="e.g. videos/NEURO_FORAGE.mp4" class="w-full bg-black/50 border border-cyan-500/40 rounded px-3 py-1.5 text-cyan-200">
+                </div>
+                <div>
+                    <label class="block text-cyan-400 mb-1">Live Deployment URL:</label>
+                    <input type="text" id="new-proj-link" placeholder="e.g. https://huggingface.co/..." class="w-full bg-black/50 border border-cyan-500/40 rounded px-3 py-1.5 text-cyan-200">
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-5">
+                <button onclick="closeAddProjectModal()" class="px-3 py-1.5 bg-black/50 border border-cyan-500/30 text-cyan-300 rounded text-xs">CANCEL</button>
+                <button onclick="saveProjectEntry()" class="px-4 py-1.5 bg-amber-950/60 border border-amber-500 text-amber-300 rounded text-xs font-bold">SAVE PROJECT</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Add Certification Modal -->
+    <div id="add-cert-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="hud-border bg-[#020b18] rounded-lg max-w-lg w-full p-6 glow-box relative backdrop-blur-2xl font-mono max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-cyan-500/30">
+                <h4 class="text-emerald-400 font-bold text-sm" id="cert-modal-title"><i class="fa-solid fa-plus-circle mr-1"></i> ADD / EDIT CERTIFICATE</h4>
+                <button onclick="closeAddCertModal()" class="text-cyan-400 hover:text-cyan-200 text-xs"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <input type="hidden" id="edit-cert-id" value="">
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-cyan-400 mb-1">Certificate Title:</label>
+                    <input type="text" id="new-cert-title" placeholder="e.g. Deep Learning for Developers" class="w-full bg-black/50 border border-cyan-500/40 rounded px-3 py-1.5 text-cyan-200">
+                </div>
+                <div>
+                    <label class="block text-cyan-400 mb-1">Completion Date / Details:</label>
+                    <input type="text" id="new-cert-date" placeholder="e.g. May 30, 2025" class="w-full bg-black/50 border border-cyan-500/40 rounded px-3 py-1.5 text-cyan-200">
+                </div>
+                <div>
+                    <label class="block text-cyan-400 mb-1">Google Drive Link:</label>
+                    <input type="text" id="new-cert-link" placeholder="e.g. https://drive.google.com/file/d/..." class="w-full bg-black/50 border border-cyan-500/40 rounded px-3 py-1.5 text-cyan-200">
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-5">
+                <button onclick="closeAddCertModal()" class="px-3 py-1.5 bg-black/50 border border-cyan-500/30 text-cyan-300 rounded text-xs">CANCEL</button>
+                <button onclick="saveCertEntry()" class="px-4 py-1.5 bg-emerald-950 border border-emerald-400 text-emerald-300 rounded text-xs font-bold">SAVE CERTIFICATE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Volumetric Dossier Pop-up Window -->
+    <div id="dossier-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="hud-border bg-[#020b18]/95 rounded-lg max-w-2xl w-full p-6 glow-box relative backdrop-blur-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-cyan-500/30">
+                <h3 id="modal-title" class="font-mono font-bold text-cyan-300 text-base">DOSSIER DATA</h3>
+                <button onclick="closeDossierModal()" class="text-cyan-400 hover:text-cyan-200 font-mono text-xs px-2 py-1 border border-cyan-500/30 rounded">
+                    <i class="fa-solid fa-xmark"></i> CLOSE
+                </button>
+            </div>
+            <div id="modal-body" class="space-y-3 font-mono text-xs text-slate-300"></div>
+            <div class="flex justify-end mt-6">
+                <button onclick="closeDossierModal()" class="px-4 py-1.5 bg-cyan-950 border border-cyan-400 text-cyan-300 rounded font-mono text-xs hover:bg-cyan-500/20 transition-all">
+                    COLLAPSE
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actual Video Player Modal -->
+    <div id="video-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="hud-border bg-[#020b18] rounded-lg max-w-2xl w-full p-5 glow-box relative backdrop-blur-2xl">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-cyan-500/30">
+                <h4 id="video-modal-title" class="font-mono font-bold text-cyan-300 text-sm">PLAYING VIDEO FEED</h4>
+                <button onclick="closeVideoModal()" class="text-cyan-400 hover:text-cyan-200 text-xs">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="bg-black/90 border border-cyan-500/40 rounded overflow-hidden">
+                <video id="project-video-player" class="w-full h-72 object-contain bg-black" controls>
+                    <source id="video-source" src="" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <div class="p-3 border-t border-cyan-500/20">
+                    <p id="video-modal-desc" class="font-mono text-xs text-cyan-200"></p>
+                </div>
+            </div>
+            <div class="flex justify-end mt-4">
+                <button onclick="closeVideoModal()" class="px-4 py-1.5 bg-cyan-950 border border-cyan-400 text-cyan-300 rounded text-xs font-mono">
+                    CLOSE PLAYER
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let menuOpen = false;
+        let isAdminLoggedIn = false;
+
+        // Persistent Voice Engine (Speaks Automatically)
+        function loshSpeak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.92;
+                utterance.pitch = 0.85;
+                const voices = window.speechSynthesis.getVoices();
+                const preferredVoice = voices.find(v => v.name.includes('UK English') || v.name.includes('Google UK English Male') || v.lang.includes('en'));
+                if (preferredVoice) utterance.voice = preferredVoice;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Trigger greeting speech immediately when page loads & modal closes
+        window.addEventListener('DOMContentLoaded', () => {
+            renderExperiences();
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.onvoiceschanged = () => {};
+            }
+        });
+
+        // Default Full Databases
+        const defaultExperiences = [
+            { id: 1, title: "AI & Data Science Certification", org: "DRISHTI CPS at IIT Indore", date: "Verified Credential", desc: "Professional Certification Program offered by DRISHTI CPS at IIT Indore in partnership with Intellipaat and Microsoft.", type: "cert" },
+            { id: 2, title: "Infosys Springboard Internship 6.0 – AI", org: "Infosys Springboard", date: "Nov 2025", desc: "GenAI Implementation for medical imaging clarity (X-rays, MRI, CT). Engineered NLP medical notes & ICD-10 coding pipelines (reducing admin burden by 40%).", type: "exp" },
+            { id: 3, title: "EDUNET Foundation – Microsoft AI", org: "EDUNET Foundation", date: "June 2025", desc: "Applied GenAI concepts via Microsoft Learn and Edunet LMS. Explored Azure AI services, ethical AI, and cloud-deployed models.", type: "exp" },
+            { id: 4, title: "EDUNET Foundation – IBM SkillsBuild", org: "IBM SkillsBuild", date: "May 2025", desc: "Mastered core AI applications through IBM’s SkillsBuild platform and completed guided interactive labs for AI model development.", type: "exp" }
+        ];
+
+        const defaultProjects = [
+            { id: 1, title: "Neuro_forage Gamified AI Platform", desc: "An interactive gamified AI platform merging cognitive challenges with generative artificial intelligence models for immersive user engagement.", workflow: "User Input -> Gamified Engine -> GenAI Model Processing -> Dynamic UI Rendering", video: "videos/NEURO_FORAGE.mp4", link: "https://huggingface.co/spaces/losh-05l/neuro_forage" },
+            { id: 2, title: "Full-Stage ML Portfolio Hub", desc: "A foundational machine learning portfolio hub establishing your end-to-end development architecture, version control, and clean aesthetic.", workflow: "Code Architecture -> Version Control -> Portfolio Deployment", video: "videos/BASIC_ML_MODELS.mp4", link: "https://losh05-l.github.io/ai-portfolio-hub/" },
+            { id: 3, title: "GenAI RAG Document Assistant", desc: "An intelligent Retrieval-Augmented Generation (RAG) assistant powered by advanced text splitters and the Google GenAI SDK, wrapped in a high-performance FastAPI backend.", workflow: "Document Upload -> Text Splitting -> Google GenAI SDK Embeddings -> FastAPI Backend", video: "videos/GENAI_RAG.mp4", link: "https://losh05-l.github.io/The-GenAI-RAG-Retrieval-Augmented-Generation-Document-Assistant/" },
+            { id: 4, title: "Computer Vision Image Classifier", desc: "A deep learning image classification pipeline built from scratch using a custom PyTorch Convolutional Neural Network (CNN) and OpenCV inference engine.", workflow: "Multi-format Image Input [WebP/PNG/JPG] -> OpenCV Preprocessing -> PyTorch CNN Inference Engine", video: "videos/NEURAL_CV.mp4", link: "https://losh05-l.github.io/Computer-Vision-Image-Classifier-/" },
+            { id: 5, title: "AI-Enhanced EHR Systems", desc: "HIPAA-compliant platform using Generative AI to automate medical imaging analysis and clinical NLP documentation.", workflow: "Medical Records Ingestion -> Generative AI Analysis -> Clinical NLP Documentation", video: "videos/AI_ENHANCED_EHR_SYSTEM.mp4", link: "https://aienhancedehrteamb.streamlit.app/" },
+            { id: 6, title: "Agro Guard (Smart Agriculture Assistant)", desc: "IoT sensor telemetry monitoring soil moisture with automated Firebase Realtime Database cloud sync and mobile alerts.", workflow: "Soil Sensor Telemetry -> Firebase Cloud Sync -> Automated Mobile Alerts", video: "", link: "" }
+        ];
+
+        const defaultCertifications = [
+            { id: 1, title: "Professional Certification Program in AI and Data Science", date: "DRISHTI CPS at IIT Indore", link: "https://drive.google.com/drive/folders/17Y58yl_EdAwJobprCY_VBZvrot6xuq_F" },
+            { id: 2, title: "Artificial Intelligence Primer Certification", date: "June 17, 2025", link: "https://drive.google.com/file/d/1v08MjPhznk8TCHrVjcr-Ce6RB-VbLphU/view?usp=sharing" },
+            { id: 3, title: "Deep Learning for Developers", date: "May 30, 2025", link: "https://drive.google.com/file/d/1WaYXrTL8hcEMzhosHDsJuAaMCDXv1Bbl/view?usp=sharing" },
+            { id: 4, title: "Computer Vision 101", date: "May 30, 2025", link: "https://drive.google.com/file/d/1ev9l0jOt75dW2WKOPJ9jcz6wXH5pZZ9O/view?usp=sharing" },
+            { id: 5, title: "Generative Models for Developers", date: "May 30, 2025", link: "https://drive.google.com/file/d/182GrpPIV6NbJ_Fqi8gf8E6X_sYRdIt69/view?usp=sharing" },
+            { id: 6, title: "Programming Fundamentals & Python Basics", date: "June 2025", link: "https://drive.google.com/file/d/1qDk6fkHkgXIHc1CjpVtGf98wRB4ORwfv/view?usp=sharing" },
+            { id: 7, title: "Software Engineering and Agile Development", date: "June 7, 2025", link: "https://drive.google.com/file/d/15WYjqCkEHshU-jQAVjWuJ6aFndoRLbX_/view?usp=sharing" }
+        ];
+
+        function getStorage(key, defaultVal) {
+            const data = localStorage.getItem('losh_' + key);
+            return data ? JSON.parse(data) : defaultVal;
+        }
+
+        function setStorage(key, val) {
+            localStorage.setItem('losh_' + key, JSON.stringify(val));
+        }
+
+        function renderExperiences() {
+            const container = document.getElementById('experience-container');
+            const items = getStorage('experiences', defaultExperiences);
+            container.innerHTML = "";
+
+            items.forEach((item) => {
+                const div = document.createElement('div');
+                div.className = "hud-border bg-cyan-950/40 p-2.5 rounded relative group";
+                
+                let adminControls = "";
+                if (isAdminLoggedIn) {
+                    adminControls = `
+                        <div class="absolute top-2 right-2 flex gap-1 z-10">
+                            <button onclick="openEditExperienceModal(${item.id})" class="px-1.5 py-0.5 bg-cyan-900 text-cyan-200 text-[9px] rounded hover:bg-cyan-700" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteExperience(${item.id})" class="px-1.5 py-0.5 bg-red-950 text-red-300 text-[9px] rounded hover:bg-red-800" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    `;
+                }
+
+                div.innerHTML = `
+                    ${adminControls}
+                    <div class="flex items-center justify-between pr-10">
+                        <span class="font-bold ${item.type === 'cert' ? 'text-amber-400' : 'text-cyan-200'} text-[11px]">${item.title}</span>
+                        <span class="text-[9px] text-cyan-400">${item.date}</span>
+                    </div>
+                    <p class="text-[10px] text-cyan-400/90 font-mono mt-0.5">${item.org}</p>
+                    <p class="text-[10px] text-slate-300 font-sans mt-1">${item.desc}</p>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // JARVIS Autonomous Navigation & Spoken Response Engine
+        function handleChatKey(e) {
+            if (e.key === 'Enter') sendChatMessage();
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const query = input.value.trim();
+            if (!query) return;
+
+            appendChatMessage('Visitor', query);
+            input.value = "";
+
+            setTimeout(() => {
+                const jarvisResponse = processJARVISCommand(query);
+                appendChatMessage('L.O.S.H.', jarvisResponse);
+                loshSpeak(jarvisResponse);
+            }, 300);
+        }
+
+        function appendChatMessage(sender, text) {
+            const history = document.getElementById('chat-history');
+            const div = document.createElement('div');
+            
+            if (sender === 'L.O.S.H.') {
+                div.className = "text-cyan-300 bg-cyan-950/50 p-2 rounded border border-cyan-500/30";
+                div.innerHTML = `<strong>L.O.S.H.:</strong> ${text}`;
+            } else {
+                div.className = "text-slate-200 bg-black/40 p-2 rounded border border-slate-700";
+                div.innerHTML = `<strong>You:</strong> ${text}`;
+            }
+
+            history.appendChild(div);
+            history.scrollTop = history.scrollHeight;
+        }
+
+        function processJARVISCommand(query) {
+            const q = query.toLowerCase();
+
+            if (q.includes('project') || q.includes('neuro') || q.includes('rag') || q.includes('vision') || q.includes('ehr') || q.includes('agro') || q.includes('deploy') || q.includes('video')) {
+                openDossier('PROJECTS_VAULT');
+                return "Opening the Projects Vault dossier on your screen. You can inspect Lokesh's deployed machine learning systems and watch video walkthroughs.";
+            } 
+            else if (q.includes('resume') || q.includes('experience') || q.includes('internship') || q.includes('infosys') || q.includes('edunet') || q.includes('ibm')) {
+                openDossier('MASTER_RESUME');
+                return "Accessing the Master Resume dossier, detailing Lokesh's AI internship at Infosys Springboard and virtual AI internships with Edunet Foundation.";
+            } 
+            else if (q.includes('certif') || q.includes('iit') || q.includes('indore') || q.includes('drishti') || q.includes('drive')) {
+                openDossier('CERTIFICATIONS_CLEARANCE');
+                return "Pulling up the Certifications dossier with direct Google Drive links to Lokesh's verified credentials, including his AI and Data Science certificate from IIT Indore.";
+            } 
+            else if (q.includes('education') || q.includes('college') || q.includes('nri') || q.includes('citd') || q.includes('degree') || q.includes('diploma')) {
+                openDossier('SELF_INTRODUCTION');
+                return "Opening the Self-Introduction dossier. Lokesh is pursuing his B.Tech in Computer Science at NRI Institute of Technology after completing his diploma from CITD.";
+            } 
+            else if (q.includes('skill') || q.includes('python') || q.includes('pytorch') || q.includes('fastapi') || q.includes('firebase')) {
+                openDossier('SKILLS_DIAGNOSTICS');
+                return "Displaying the Skills Diagnostics dossier, highlighting Lokesh's core expertise in Python, FastAPI, PyTorch, OpenCV, and RAG architectures.";
+            } 
+            else if (q.includes('admin') || q.includes('edit')) {
+                return "To edit portfolio data, click the Admin Login button on the top right header and enter passcode to unlock universal editing privileges.";
+            }
+
+            return "I am L.O.S.H., your autonomous voice guide. Ask me to show projects, open Lokesh's resume, or check certifications, and I will speak my response while navigating the screen for you.";
+        }
+
+        function selectVisitor(type) {
+            document.getElementById('welcome-modal').classList.add('hidden');
+            let welcomeMsg = "";
+            if (type === 'recruiter') {
+                document.getElementById('clearance-tag').innerText = "RECRUITER // PRIORITY";
+                welcomeMsg = "Recruiter clearance verified. Welcome to Are Lokesh Reddy's command center. Ask me to open Lokesh's resume, projects, or certifications.";
+            } else {
+                document.getElementById('clearance-tag').innerText = "EXPLORER";
+                welcomeMsg = "Tech Explorer clearance verified. Autonomous voice navigation is online. Feel free to ask me anything about Lokesh's portfolio.";
+            }
+            appendChatMessage('L.O.S.H.', welcomeMsg);
+            loshSpeak(welcomeMsg);
+        }
+
+        function toggleFullscreen() {
+            if (!document.documentElement.requestFullscreen) {
+                alert("Fullscreen API not supported.");
+                return;
+            }
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    alert(`Error enabling fullscreen: ${err.message}`);
+                });
+                document.getElementById('fullscreen-btn').textContent = "[ EXIT FULLSCREEN ]";
+                loshSpeak("Fullscreen immersion engaged.");
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+                document.getElementById('fullscreen-btn').textContent = "[ ⛶ FULLSCREEN ]";
+                loshSpeak("Standard window mode restored.");
+            }
+        }
+
+        function toggleMenu() {
+            menuOpen = !menuOpen;
+            const menu = document.getElementById('slide-menu');
+            if (menuOpen) {
+                menu.classList.add('open');
+                loshSpeak("Opening holographic dossier menu log.");
+            } else {
+                menu.classList.remove('open');
+            }
+        }
+
+        // Admin Auth Logic
+        function promptAdminLogin() {
+            if (isAdminLoggedIn) {
+                if (confirm("Log out of Admin mode?")) {
+                    isAdminLoggedIn = false;
+                    document.getElementById('admin-auth-text').innerText = "ADMIN LOGIN";
+                    document.getElementById('admin-panel-badge').classList.add('hidden');
+                    document.getElementById('user-panel-badge').classList.remove('hidden');
+                    renderExperiences();
+                    loshSpeak("Logged out of Admin mode.");
+                }
+                return;
+            }
+            document.getElementById('admin-login-modal').classList.remove('hidden');
+            document.getElementById('admin-login-modal').classList.add('flex');
+            document.getElementById('admin-passcode-input').focus();
+            loshSpeak("Please enter your admin passcode.");
+        }
+
+        function closeAdminLoginModal() {
+            document.getElementById('admin-login-modal').classList.remove('flex');
+            document.getElementById('admin-login-modal').classList.add('hidden');
+            document.getElementById('admin-passcode-input').value = "";
+        }
+
+        function handlePasscodeKey(e) { if (e.key === 'Enter') verifyAdminPasscode(); }
+
+        function verifyAdminPasscode() {
+            const val = document.getElementById('admin-passcode-input').value.trim();
+            if (val === "Ice@22") {
+                isAdminLoggedIn = true;
+                closeAdminLoginModal();
+                document.getElementById('admin-panel-badge').classList.remove('hidden');
+                document.getElementById('user-panel-badge').classList.add('hidden');
+                document.getElementById('admin-auth-text').innerText = "LOGOUT ADMIN";
+                renderExperiences();
+                loshSpeak("Admin authentication successful. Universal editing unlocked.");
+            } else {
+                alert("Incorrect passcode! ");
+                loshSpeak("Incorrect passcode.");
+            }
+        }
+
+        // Experience Modals
+        function openAddExperienceModal() {
+            document.getElementById('exp-modal-title').innerHTML = '<i class="fa-solid fa-plus-circle mr-1"></i> ADD EXPERIENCE / CERT';
+            document.getElementById('edit-exp-id').value = "";
+            document.getElementById('new-exp-type').value = "exp";
+            document.getElementById('new-exp-title').value = "";
+            document.getElementById('new-exp-org').value = "";
+            document.getElementById('new-exp-date').value = "";
+            document.getElementById('new-exp-desc').value = "";
+            document.getElementById('add-exp-modal').classList.remove('hidden');
+            document.getElementById('add-exp-modal').classList.add('flex');
+        }
+
+        function openEditExperienceModal(id) {
+            const items = getStorage('experiences', defaultExperiences);
+            const item = items.find(x => x.id === id);
+            if (!item) return;
+
+            document.getElementById('exp-modal-title').innerHTML = '<i class="fa-solid fa-pen mr-1"></i> EDIT EXPERIENCE / CERT';
+            document.getElementById('edit-exp-id').value = item.id;
+            document.getElementById('new-exp-type').value = item.type;
+            document.getElementById('new-exp-title').value = item.title;
+            document.getElementById('new-exp-org').value = item.org;
+            document.getElementById('new-exp-date').value = item.date;
+            document.getElementById('new-exp-desc').value = item.desc;
+            document.getElementById('add-exp-modal').classList.remove('hidden');
+            document.getElementById('add-exp-modal').classList.add('flex');
+        }
+
+        function closeAddExperienceModal() {
+            document.getElementById('add-exp-modal').classList.remove('flex');
+            document.getElementById('add-exp-modal').classList.add('hidden');
+        }
+
+        function saveExperienceEntry() {
+            const editId = document.getElementById('edit-exp-id').value;
+            const type = document.getElementById('new-exp-type').value;
+            const title = document.getElementById('new-exp-title').value.trim();
+            const org = document.getElementById('new-exp-org').value.trim();
+            const date = document.getElementById('new-exp-date').value.trim();
+            const desc = document.getElementById('new-exp-desc').value.trim();
+
+            if (!title || !org) {
+                alert("Please provide at least a title and organization.");
+                return;
+            }
+
+            let items = getStorage('experiences', defaultExperiences);
+            if (editId) {
+                items = items.map(x => x.id == editId ? { ...x, type, title, org, date, desc } : x);
+            } else {
+                items.unshift({ id: Date.now(), type, title, org, date: date || "Present", desc });
+            }
+
+            setStorage('experiences', items);
+            closeAddExperienceModal();
+            renderExperiences();
+            loshSpeak("Experience entry successfully saved.");
+        }
+
+        function deleteExperience(id) {
+            if (confirm("Are you sure you want to delete this item?")) {
+                let items = getStorage('experiences', defaultExperiences);
+                items = items.filter(x => x.id !== id);
+                setStorage('experiences', items);
+                renderExperiences();
+                loshSpeak("Item deleted.");
+            }
+        }
+
+        // Project Modals
+        function openAddProjectModal() {
+            document.getElementById('proj-modal-title').innerHTML = '<i class="fa-solid fa-plus-circle mr-1"></i> ADD PROJECT';
+            document.getElementById('edit-proj-id').value = "";
+            document.getElementById('new-proj-title').value = "";
+            document.getElementById('new-proj-desc').value = "";
+            document.getElementById('new-proj-workflow').value = "";
+            document.getElementById('new-proj-video').value = "";
+            document.getElementById('new-proj-link').value = "";
+            document.getElementById('add-proj-modal').classList.remove('hidden');
+            document.getElementById('add-proj-modal').classList.add('flex');
+        }
+
+        function openEditProjectModal(id) {
+            const projects = getStorage('projects', defaultProjects);
+            const proj = projects.find(x => x.id === id);
+            if (!proj) return;
+
+            document.getElementById('proj-modal-title').innerHTML = '<i class="fa-solid fa-pen mr-1"></i> EDIT PROJECT';
+            document.getElementById('edit-proj-id').value = proj.id;
+            document.getElementById('new-proj-title').value = proj.title;
+            document.getElementById('new-proj-desc').value = proj.desc;
+            document.getElementById('new-proj-workflow').value = proj.workflow;
+            document.getElementById('new-proj-video').value = proj.video;
+            document.getElementById('new-proj-link').value = proj.link;
+            document.getElementById('add-proj-modal').classList.remove('hidden');
+            document.getElementById('add-proj-modal').classList.add('flex');
+        }
+
+        function closeAddProjectModal() {
+            document.getElementById('add-proj-modal').classList.remove('flex');
+            document.getElementById('add-proj-modal').classList.add('hidden');
+        }
+
+        function saveProjectEntry() {
+            const editId = document.getElementById('edit-proj-id').value;
+            const title = document.getElementById('new-proj-title').value.trim();
+            const desc = document.getElementById('new-proj-desc').value.trim();
+            const workflow = document.getElementById('new-proj-workflow').value.trim();
+            const video = document.getElementById('new-proj-video').value.trim();
+            const link = document.getElementById('new-proj-link').value.trim();
+
+            if (!title) {
+                alert("Please provide a project title.");
+                return;
+            }
+
+            let projects = getStorage('projects', defaultProjects);
+            if (editId) {
+                projects = projects.map(x => x.id == editId ? { ...x, title, desc, workflow, video, link } : x);
+            } else {
+                projects.push({ id: Date.now(), title, desc, workflow, video, link });
+            }
+
+            setStorage('projects', projects);
+            closeAddProjectModal();
+            openDossier('PROJECTS_VAULT');
+            loshSpeak("Project successfully saved.");
+        }
+
+        function deleteProject(id) {
+            if (confirm("Delete this project?")) {
+                let projects = getStorage('projects', defaultProjects);
+                projects = projects.filter(x => x.id !== id);
+                setStorage('projects', projects);
+                openDossier('PROJECTS_VAULT');
+                loshSpeak("Project deleted.");
+            }
+        }
+
+        // Certification Modals
+        function openAddCertModal() {
+            document.getElementById('cert-modal-title').innerHTML = '<i class="fa-solid fa-plus-circle mr-1"></i> ADD CERTIFICATE';
+            document.getElementById('edit-cert-id').value = "";
+            document.getElementById('new-cert-title').value = "";
+            document.getElementById('new-cert-date').value = "";
+            document.getElementById('new-cert-link').value = "";
+            document.getElementById('add-cert-modal').classList.remove('hidden');
+            document.getElementById('add-cert-modal').classList.add('flex');
+        }
+
+        function openEditCertModal(id) {
+            const certs = getStorage('certifications', defaultCertifications);
+            const cert = certs.find(x => x.id === id);
+            if (!cert) return;
+
+            document.getElementById('cert-modal-title').innerHTML = '<i class="fa-solid fa-pen mr-1"></i> EDIT CERTIFICATE';
+            document.getElementById('edit-cert-id').value = cert.id;
+            document.getElementById('new-cert-title').value = cert.title;
+            document.getElementById('new-cert-date').value = cert.date;
+            document.getElementById('new-cert-link').value = cert.link;
+            document.getElementById('add-cert-modal').classList.remove('hidden');
+            document.getElementById('add-cert-modal').classList.add('flex');
+        }
+
+        function closeAddCertModal() {
+            document.getElementById('add-cert-modal').classList.remove('flex');
+            document.getElementById('add-cert-modal').classList.add('hidden');
+        }
+
+        function saveCertEntry() {
+            const editId = document.getElementById('edit-cert-id').value;
+            const title = document.getElementById('new-cert-title').value.trim();
+            const date = document.getElementById('new-cert-date').value.trim();
+            const link = document.getElementById('new-cert-link').value.trim();
+
+            if (!title) {
+                alert("Please provide a certificate title.");
+                return;
+            }
+
+            let certs = getStorage('certifications', defaultCertifications);
+            if (editId) {
+                certs = certs.map(x => x.id == editId ? { ...x, title, date, link } : x);
+            } else {
+                certs.push({ id: Date.now(), title, date, link });
+            }
+
+            setStorage('certifications', certs);
+            closeAddCertModal();
+            openDossier('CERTIFICATIONS_CLEARANCE');
+            loshSpeak("Certificate successfully saved.");
+        }
+
+        function deleteCert(id) {
+            if (confirm("Delete this certificate?")) {
+                let certs = getStorage('certifications', defaultCertifications);
+                certs = certs.filter(x => x.id !== id);
+                setStorage('certifications', certs);
+                openDossier('CERTIFICATIONS_CLEARANCE');
+                loshSpeak("Certificate deleted.");
+            }
+        }
+
+        // Three.js 3D Central Arc Reactor & Grid Background
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), alpha: true, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        const reactorGroup = new THREE.Group();
+        scene.add(reactorGroup);
+
+        const sphereGeo = new THREE.IcosahedronGeometry(22, 2);
+        const sphereMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true, transparent: true, opacity: 0.15 });
+        const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
+        reactorGroup.add(sphereMesh);
+
+        const ringGeo = new THREE.TorusGeometry(8, 0.2, 16, 100);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.6 });
+        const ring1 = new THREE.Mesh(ringGeo, ringMat);
+        const ring2 = new THREE.Mesh(ringGeo, ringMat);
+        ring2.rotation.x = Math.PI / 2;
+        reactorGroup.add(ring1);
+        reactorGroup.add(ring2);
+
+        const pCount = 300;
+        const pGeo = new THREE.BufferGeometry();
+        const pPos = new Float32Array(pCount * 3);
+        for(let i=0; i<pCount*3; i++) pPos[i] = (Math.random() - 0.5) * 80;
+        pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+        const pMat = new THREE.PointsMaterial({ color: 0x00f0ff, size: 0.5, transparent: true, opacity: 0.6 });
+        const pSystem = new THREE.Points(pGeo, pMat);
+        scene.add(pSystem);
+
+        camera.position.z = 45;
+
+        let mouseX = 0, mouseY = 0;
+        document.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth) - 0.5;
+            mouseY = (e.clientY / window.innerHeight) - 0.5;
+        });
+
+        function animateThree() {
+            requestAnimationFrame(animateThree);
+            sphereMesh.rotation.x += 0.001;
+            sphereMesh.rotation.y += 0.002;
+            ring1.rotation.z += 0.01;
+            ring2.rotation.y += 0.015;
+            pSystem.rotation.y -= 0.001;
+
+            reactorGroup.rotation.y += (mouseX * 0.4 - reactorGroup.rotation.y) * 0.05;
+            reactorGroup.rotation.x += (-mouseY * 0.4 - reactorGroup.rotation.x) * 0.05;
+
+            renderer.render(scene, camera);
+        }
+        animateThree();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        function openDossier(key) {
+            const titleEl = document.getElementById('modal-title');
+            const bodyEl = document.getElementById('modal-body');
+
+            if (key === 'SELF_INTRODUCTION') {
+                titleEl.innerText = "DOSSIER: SELF-INTRODUCTION & EDUCATION";
+                bodyEl.innerHTML = `
+                    <div class="hud-border bg-cyan-950/40 p-3 rounded mb-2">
+                        <strong class="text-cyan-300">Operative Summary:</strong><br>
+                        I am Are Lokesh Reddy, an AI/ML Engineer and Systems Developer passionate about intelligent automation, RAG architectures, gamified AI platforms, and clinical systems.
+                    </div>
+                    <div class="hud-border bg-cyan-950/40 p-3 rounded mb-2">
+                        <strong class="text-cyan-300">Undergraduate Education:</strong><br>
+                        <strong>B.Tech in Computer Science and Engineering</strong><br>
+                        NRI Institute of Technology (2024–2027)
+                    </div>
+                    <div class="hud-border bg-cyan-950/40 p-3 rounded">
+                        <strong class="text-cyan-300">Diploma Background:</strong><br>
+                        <strong>Diploma in Electronics and Communication Engineering</strong><br>
+                        Central Institute of Tool Design (2021–2024) [Secured 72.5%]
+                    </div>
+                `;
+            } else if (key === 'PROJECTS_VAULT') {
+                let adminProjBtn = isAdminLoggedIn ? `<div class="mb-3"><button onclick="openAddProjectModal()" class="px-3 py-1.5 bg-amber-950/60 border border-amber-500 text-amber-300 rounded text-xs font-bold"><i class="fa-solid fa-plus mr-1"></i> Add New Project</button></div>` : "";
+                titleEl.innerText = "DOSSIER: PROJECTS VAULT, VIDEOS & DEPLOYMENTS";
+                
+                const projects = getStorage('projects', defaultProjects);
+                let html = adminProjBtn;
+                
+                projects.forEach(p => {
+                    let actions = isAdminLoggedIn ? `<div class="mt-2 flex gap-2"><button onclick="openEditProjectModal(${p.id})" class="px-2 py-1 bg-cyan-900 text-cyan-200 text-[10px] rounded">Edit</button><button onclick="deleteProject(${p.id})" class="px-2 py-1 bg-red-950 text-red-300 text-[10px] rounded">Delete</button></div>` : "";
+                    let videoBtn = p.video ? `<button onclick="playDemoVideo('${p.title}', '${p.video}', '${p.desc}')" class="px-2.5 py-1 bg-cyan-950 border border-cyan-400 text-cyan-300 rounded hover:bg-cyan-500/20 text-[10px]"><i class="fa-solid fa-play mr-1"></i> Play Video Demo</button>` : "";
+                    let linkBtn = p.link ? `<a href="${p.link}" target="_blank" class="px-2.5 py-1 bg-amber-950/50 border border-amber-500/50 text-amber-400 rounded hover:bg-amber-500/20 text-[10px] flex items-center"><i class="fa-solid fa-globe mr-1"></i> Live Deployment</a>` : "";
+
+                    html += `
+                        <div class="hud-border bg-cyan-950/40 p-3 rounded mb-3">
+                            <strong class="text-cyan-300 text-sm">${p.title}</strong>
+                            <p class="mt-1 text-slate-300">${p.desc}</p>
+                            ${p.workflow ? `<div class="mt-2 text-[10px] text-cyan-400 font-mono"><strong>Workflow:</strong> ${p.workflow}</div>` : ""}
+                            <div class="mt-3 flex gap-2 flex-wrap">${videoBtn} ${linkBtn}</div>
+                            ${actions}
+                        </div>
+                    `;
+                });
+                bodyEl.innerHTML = html;
+            } else if (key === 'CERTIFICATIONS_CLEARANCE') {
+                let adminCertBtn = isAdminLoggedIn ? `<div class="mb-3"><button onclick="openAddCertModal()" class="px-3 py-1.5 bg-emerald-950 border border-emerald-500 text-emerald-300 rounded text-xs font-bold"><i class="fa-solid fa-plus mr-1"></i> Add New Certificate</button></div>` : "";
+                titleEl.innerText = "DOSSIER: CERTIFICATIONS & CLEARANCES";
+                
+                const certs = getStorage('certifications', defaultCertifications);
+                let html = adminCertBtn;
+
+                certs.forEach(c => {
+                    let actions = isAdminLoggedIn ? `<div class="mt-2 flex gap-2"><button onclick="openEditCertModal(${c.id})" class="px-2 py-1 bg-cyan-900 text-cyan-200 text-[10px] rounded">Edit</button><button onclick="deleteCert(${c.id})" class="px-2 py-1 bg-red-950 text-red-300 text-[10px] rounded">Delete</button></div>` : "";
+                    let linkBtn = c.link ? `<div class="mt-3"><a href="${c.link}" target="_blank" class="px-2.5 py-1 bg-amber-950/50 border border-amber-500/50 text-amber-400 rounded hover:bg-amber-500/20 text-[10px] inline-flex items-center"><i class="fa-solid fa-certificate mr-1"></i> View Certificate (Drive)</a></div>` : "";
+
+                    html += `
+                        <div class="hud-border bg-cyan-950/40 p-3 rounded mb-3">
+                            <strong class="text-cyan-300 text-sm">${c.title}</strong>
+                            <p class="mt-1 text-slate-300">${c.date}</p>
+                            ${linkBtn}
+                            ${actions}
+                        </div>
+                    `;
+                });
+                bodyEl.innerHTML = html;
+            } else if (key === 'SKILLS_DIAGNOSTICS') {
+                titleEl.innerText = "DOSSIER: SKILLS DIAGNOSTICS";
+                bodyEl.innerHTML = `
+                    <div class="hud-border bg-cyan-950/40 p-3 rounded">
+                        <strong class="text-cyan-300">Core Capabilities:</strong><br>
+                        Python, FastAPI, PyTorch, Convolutional Neural Networks (CNN), OpenCV, Google GenAI SDK, RAG Architectures, Google Firebase, Gamified AI Platforms, Git, Docker, Render Deployment.
+                    </div>
+                `;
+            } else if (key === 'MASTER_RESUME') {
+                titleEl.innerText = "DOSSIER: MASTER RESUME & EXPERIENCE // ARE LOKESH REDDY";
+                bodyEl.innerHTML = `
+                    <div class="hud-border bg-cyan-950/40 p-3 rounded mb-3 flex items-center justify-between">
+                        <div>
+                            <span class="text-cyan-300 font-bold block text-sm">Are Lokesh Reddy</span>
+                            <span class="text-[10px] text-cyan-400 font-mono">AI/ML Engineer & Systems Developer</span>
+                        </div>
+                        <a href="https://drive.google.com/file/d/13MJPbD7uDIsxEEMeCNnccnvVwzea9Tlo/view?usp=sharing" target="_blank" class="px-3 py-1.5 bg-amber-950/60 border border-amber-500 text-amber-300 rounded hover:bg-amber-500/20 text-xs font-bold flex items-center">
+                            <i class="fa-solid fa-download mr-1.5"></i> Download Master Resume / Files
+                        </a>
+                    </div>
+                    <div class="hud-border bg-cyan-950/40 p-3 rounded mb-3">
+                        <strong class="text-cyan-300 text-sm">Education</strong><br>
+                        <p class="mt-1 text-slate-300">B.Tech in CSE (2024–2027) — NRI Institute of Technology.</p>
+                        <p class="text-slate-300">Diploma in ECE (2021–2024) — Central Institute of Tool Design [72.5%].</p>
+                    </div>
+                `;
+            }
+
+            document.getElementById('dossier-modal').classList.remove('hidden');
+            document.getElementById('dossier-modal').classList.add('flex');
+        }
+
+        function closeDossierModal() {
+            document.getElementById('dossier-modal').classList.remove('flex');
+            document.getElementById('dossier-modal').classList.add('hidden');
+        }
+
+        function playDemoVideo(title, videoPath, desc) {
+            document.getElementById('video-modal-title').innerText = "LIVE FEED: " + title.toUpperCase();
+            document.getElementById('video-modal-desc').innerText = desc;
+            
+            const videoPlayer = document.getElementById('project-video-player');
+            const videoSource = document.getElementById('video-source');
+            videoSource.src = videoPath;
+            videoPlayer.load();
+            videoPlayer.play();
+
+            document.getElementById('video-modal').classList.remove('hidden');
+            document.getElementById('video-modal').classList.add('flex');
+        }
+
+        function closeVideoModal() {
+            const videoPlayer = document.getElementById('project-video-player');
+            videoPlayer.pause();
+            document.getElementById('video-modal').classList.remove('flex');
+            document.getElementById('video-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
